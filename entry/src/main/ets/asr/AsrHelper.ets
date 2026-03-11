@@ -7,7 +7,7 @@ import { AsrText } from './AsrText';
 import { SpeechAsrCallback } from './SpeechAsrCallback';
 import { ArrayList, HashMap } from '@kit.ArkTS';
 import { AsrDetail, RecognizerListener, SpeechException, SpeechRecognizer, SpeechUtility } from 'asrkit';
-import { LogUtils } from '../utils/LogUtils';
+// import { LogUtils } from '../utils/LogUtils';
 import Pair from './Pair';
 
 export class AsrHelper implements RecognizerListener {
@@ -82,7 +82,7 @@ export class AsrHelper implements RecognizerListener {
   }
 
   onEndOfSpeech() {
-    LogUtils.error("语音听写 end ====>");
+    // LogUtils.error("语音听写 end ====>");
     this.listener?.onComplete();
   };
 

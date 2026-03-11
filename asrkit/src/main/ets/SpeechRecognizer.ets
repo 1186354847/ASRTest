@@ -97,29 +97,29 @@ export class SpeechRecognizer implements AudioRecorderStatusListener {
     this.audioStatus = AudioStatus.START;
     this.audioMessageQueue = new Queue();
     this.ws?.on("open", (err: BusinessError, value: Object) => {
-      //console.log("听写WSS打开, status:" + JSON.stringify(value));
+      console.log("听写WSS打开, status:" + JSON.stringify(value));
       this.audioRecorder?.setAudioRecorderChange(this);
       this.audioRecorder?.startRecording();
     });
     this.ws?.on('message', (err: BusinessError, value: string | ArrayBuffer) => {
-      //console.log("听写WSS接收消息, message:" + value);
+      console.log("听写WSS接收消息, message:" + value);
       if (value instanceof ArrayBuffer) {
         return
       }
       this.parseAsrResult(value);
     });
     this.ws?.on('close', (err: BusinessError, value: webSocket.CloseResult) => {
-      //console.log("听写WSS关闭, code is " + value.code + ", reason is " + value.reason);
+      console.log("听写WSS关闭, code is " + value.code + ", reason is " + value.reason);
     });
     this.ws?.on('error', (err: BusinessError) => {
-      //console.log("听写WSS错误, error:" + JSON.stringify(err));
+      console.log("听写WSS错误, error:" + JSON.stringify(err));
 
     });
     this.ws?.connect(authUrl, {}, (err: BusinessError, value: boolean) => {
       if (!err) {
-        //console.log("听写WSS Connected successfully");
+        console.log("听写WSS Connected successfully");
       } else {
-        //console.log("听写WSS Connection failed. Err:" + JSON.stringify(err));
+        console.log("听写WSS Connection failed. Err:" + JSON.stringify(err));
       }
     });
   }

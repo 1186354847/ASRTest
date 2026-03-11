@@ -10,7 +10,23 @@
     },
     {
       "name": "EntryAbility_label",
-      "value": "label"
+      "value": "语音转文字"
+    },
+    {
+      "name": "permission_microphone_reason",
+      "value": "需要使用麦克风进行语音录制"
+    },
+    {
+      "name": "EntryAbility_READ_MEDIA_desc",
+      "value": "允许访问相册"
+    },
+    {
+      "name": "EntryAbility_WRITE_MEDIA_desc",
+      "value": "允许访问相册"
+    },
+    {
+      "name": "EntryAbility_WIFI_desc",
+      "value": "允许使用网络&获取Wi-Fi信息"
     }
   ]
 }

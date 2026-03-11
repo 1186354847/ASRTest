@@ -1,16 +1,29 @@
 import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
+import { AsrHelper } from '../asr/AsrHelper';
 
 const DOMAIN = 0x0000;
 
 export default class EntryAbility extends UIAbility {
+  static ability: EntryAbility;
+
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+    EntryAbility.ability = this;
     try {
       this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
     } catch (err) {
       hilog.error(DOMAIN, 'testTag', 'Failed to set colorMode. Cause: %{public}s', JSON.stringify(err));
     }
+
+    // 初始化 ASR 辅助类
+    // try {
+    //   AsrHelper.getInstance().initialize();
+    //   hilog.info(DOMAIN, 'testTag', 'ASR Helper initialized successfully');
+    // } catch (err) {
+    //   hilog.error(DOMAIN, 'testTag', 'Failed to initialize ASR Helper. Cause: %{public}s', JSON.stringify(err));
+    // }
+
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onCreate');
   }
 
