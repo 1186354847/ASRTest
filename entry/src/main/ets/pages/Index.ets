@@ -125,37 +125,29 @@ struct SpeechToTextPage {
       .margin({ bottom: 32 })
       .layoutWeight(1)
 
-      // 控制按钮
+      // 控制按钮 - 长按说话，松手停止
       Button() {
         Row() {
-          if (this.isRecording) {
-            Image($r('app.media.startIcon'))
-              .width(20)
-              .height(20)
-              .margin({ right: 8 })
-            Text('停止录音')
-              .fontSize(18)
-              .fontWeight(FontWeight.Medium)
-          } else {
-            Image($r('app.media.foreground'))
-              .width(20)
-              .height(20)
-              .margin({ right: 8 })
-            Text('开始录音')
-              .fontSize(18)
-              .fontWeight(FontWeight.Medium)
-          }
+          Image($r('app.media.foreground'))
+            .width(20)
+            .height(20)
+            .margin({ right: 8 })
+          Text('按住 说话')
+            .fontSize(18)
+            .fontWeight(FontWeight.Medium)
         }
       }
       .width('100%')
       .height(56)
-      .backgroundColor(this.isRecording ? '#FF4444' : '#007DFF')
+      .backgroundColor('#007DFF')
       .borderRadius(28)
-      .onClick(() => {
-        if (this.isRecording) {
-          this.stopRecording()
-        } else {
+      .onTouch((event: TouchEvent) => {
+        if (event.type === TouchType.Down) {
+          // 按下开始录音
           this.startRecording()
+        } else if (event.type === TouchType.Up || event.type === TouchType.Cancel) {
+          // 松手停止录音
+          this.stopRecording()
         }
       })
       .margin({ bottom: 16 })
@@ -188,7 +180,6 @@ struct SpeechToTextPage {
     }
 
     this.isRecording = true
-    this.recognizedText = '哈哈哈哈哈哈'
     this.volumeLevel = 0
 
     // 设置识别参数
