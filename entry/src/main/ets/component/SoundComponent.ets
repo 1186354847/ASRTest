@@ -17,9 +17,7 @@ export struct SoundComponent {
     }
     setTimeout(() => {
       this.timer = setInterval(() => {
-        console.log('aaaaaaaaaaa')
         this.volumeChange()
-        console.log('lllllllllllllllllllllllllllllllllllll')
       }, 200)
     })
 

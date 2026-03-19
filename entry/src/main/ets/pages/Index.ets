@@ -1,4 +1,4 @@
-import { AsrHelper } from '../asr/AsrHelper'
+import { VolcAsrHelper } from '../asr/VolcAsrHelper'
 import { SpeechAsrCallback } from '../asr/SpeechAsrCallback'
 import EntryAbility from '../entryability/EntryAbility'
 import { abilityAccessCtrl } from '@kit.AbilityKit'
@@ -13,11 +13,11 @@ struct SpeechToTextPage {
   @State isRecording: boolean = false
   @State recognizedText: string = ''
   @State volumeLevel: number = 0
-  private asrHelper: AsrHelper | null = null
+  private asrHelper: VolcAsrHelper | null = null
 
   aboutToAppear() {
     // 初始化 ASR 辅助类
-    this.asrHelper = AsrHelper.getInstance()
+    this.asrHelper = VolcAsrHelper.getInstance()
     this.asrHelper.initialize()
 
 
@@ -183,7 +183,7 @@ struct SpeechToTextPage {
     this.volumeLevel = 0
 
     // 设置识别参数
-    this.asrHelper.setParams(30000, 1000)
+    this.asrHelper.setParams()
 
 
     let lastText: string = ""
@@ -200,7 +200,7 @@ struct SpeechToTextPage {
         console.log("听写报错： code:" + code + "，message:" + message)
       },
       onVolumeChanged: (v: number) => {
-        console.log("音量大小===>" + v)
+        // console.log("音量大小===>" + v)
         this.volumeLevel = v
         // context.callbackSuccess(new Object({ status: true, eventType: "recognizerVolume", volume: v }), false);
       },
