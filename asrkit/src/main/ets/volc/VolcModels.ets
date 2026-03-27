@@ -84,3 +84,8 @@ export class VolcResponseFrame {
   payloadText: string = ''
   payload?: VolcResponsePayload
 }
+
+export interface AudioDrainResult {
+  audio: ArrayBuffer
+  isLast: boolean
+}

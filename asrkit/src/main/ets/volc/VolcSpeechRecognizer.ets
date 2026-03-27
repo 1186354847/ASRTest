@@ -8,7 +8,7 @@ import { AudioRecorderStatusListener } from '../media/AudioRecorderStatusListene
 import { Logger } from '../utils/Logger'
 import { SpeechError } from '../utils/exception/SpeechError'
 import { SpeechException } from '../utils/exception/SpeechException'
-import { VolcAsrRequestOptions, VolcFullClientRequestPayload } from './VolcModels'
+import { AudioDrainResult, VolcAsrRequestOptions, VolcFullClientRequestPayload } from './VolcModels'
 import { VolcRecognizerListener } from './VolcRecognizerListener'
 import { VolcSpeechUtility } from './VolcSpeechUtility'
 import { VolcWsProtocol } from './VolcWsProtocol'
@@ -162,8 +162,8 @@ export class VolcSpeechRecognizer implements AudioRecorderStatusListener {
   }
 
   private async flushOneAudioPacket() {
-    const next = this.audioMessageQueue?.pop()
-    if (!next) {
+    const drained = this.drainAudioQueue()
+    if (!drained) {
       if (this.audioStatus == AudioStatus.END || this.audioStatus == AudioStatus.CANCEL) {
         clearInterval(this.queueInterval)
       }
@@ -176,14 +176,60 @@ export class VolcSpeechRecognizer implements AudioRecorderStatusListener {
     }
 
     this.sequence += 1
-    const isLast = next.status == AudioStatus.END
+    const isLast = drained.isLast
     const sequence = isLast ? -this.sequence : this.sequence
-    const packet = await VolcWsProtocol.buildAudioPacket(next.audio, sequence, isLast)
+    const packet = await VolcWsProtocol.buildAudioPacket(drained.audio, sequence, isLast)
     await this.ws?.send(packet)
 
     if (isLast) {
       clearInterval(this.queueInterval)
     }
+  }
+
+  private drainAudioQueue(): AudioDrainResult | undefined {
+    if (!this.audioMessageQueue || this.audioMessageQueue.length <= 0) {
+      return undefined
+    }
+
+    const chunks: Uint8Array[] = []
+    let totalLength = 0
+    let isLast = false
+
+    while ((this.audioMessageQueue?.length ?? 0) > 0) {
+      const item = this.audioMessageQueue?.pop()
+      if (!item) {
+        break
+      }
+
+      if (item.status == AudioStatus.END) {
+        isLast = true
+        break
+      }
+
+      const chunk = new Uint8Array(item.audio)
+      if (chunk.byteLength > 0) {
+        chunks.push(chunk)
+        totalLength += chunk.byteLength
+      }
+    }
+
+    const merged = new Uint8Array(totalLength)
+    let offset = 0
+    for (let chunk of chunks) {
+      merged.set(chunk, offset)
+      offset += chunk.byteLength
+    }
+
+    if (totalLength <= 0 && !isLast) {
+      return undefined
+    }
+
+    const audioData: AudioDrainResult = new Object({
+      audio: merged.buffer,
+      isLast: isLast
+    }) as AudioDrainResult
+
+    return audioData
   }
 
   private async handleBinaryMessage(value: ArrayBuffer) {
