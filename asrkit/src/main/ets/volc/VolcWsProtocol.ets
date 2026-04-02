@@ -1,4 +1,4 @@
-import { buffer } from '@kit.ArkTS'
+import { buffer, util } from '@kit.ArkTS'
 import { SpeechError } from '../utils/exception/SpeechError'
 import { SpeechException } from '../utils/exception/SpeechException'
 import { VolcFullClientRequestPayload, VolcResponseFrame, VolcResponsePayload } from './VolcModels'
@@ -132,11 +132,13 @@ export class VolcWsProtocol {
     return merged.buffer
   }
 
-  private static stringToArrayBuffer(value: string): ArrayBuffer {
-    const data = buffer.from(value, 'utf-8')
-    const bytes = new Uint8Array(data.length)
-    bytes.set(new Uint8Array(data.buffer, data.byteOffset, data.length))
-    return bytes.buffer
+  public static stringToArrayBuffer(src: string): ArrayBuffer {
+    if (src.length == 0) {
+      return new ArrayBuffer(0);
+    }
+    let textEncoder = util.TextEncoder.create('UTF-8');
+    const uint8Array = textEncoder.encodeInto(src);
+    return uint8Array.buffer as ArrayBuffer;
   }
 
   private static arrayBufferToString(value: ArrayBuffer): string {

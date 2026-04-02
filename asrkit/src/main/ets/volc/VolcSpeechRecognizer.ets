@@ -52,10 +52,10 @@ export class VolcSpeechRecognizer implements AudioRecorderStatusListener {
     this.reset(true)
   }
 
-  onRecordStart() {
+  async onRecordStart() {
     this.audioStatus = AudioStatus.START
     this.speechCallback?.onBeginOfSpeech()
-    void this.sendFullClientRequest()
+    await this.sendFullClientRequest()
     this.handleAudioQueue()
   }
 
@@ -150,8 +150,12 @@ export class VolcSpeechRecognizer implements AudioRecorderStatusListener {
         enable_nonstream: this.options.enableNonstream
       }
     }
-    const packet = await VolcWsProtocol.buildFullRequestPacket(payload, this.sequence)
-    await this.ws?.send(packet)
+    try {
+      const packet = await VolcWsProtocol.buildFullRequestPacket(payload, this.sequence)
+      await this.ws?.send(packet)
+    } catch (error) {
+      console.log('sssssss')
+    }
   }
 
   private handleAudioQueue() {
@@ -186,6 +190,7 @@ export class VolcSpeechRecognizer implements AudioRecorderStatusListener {
     }
   }
 
+  // 队列里的数据合并
   private drainAudioQueue(): AudioDrainResult | undefined {
     if (!this.audioMessageQueue || this.audioMessageQueue.length <= 0) {
       return undefined
