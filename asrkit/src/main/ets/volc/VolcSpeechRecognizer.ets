@@ -147,14 +147,16 @@ export class VolcSpeechRecognizer implements AudioRecorderStatusListener {
         enable_punc: this.options.enablePunc,
         enable_ddc: this.options.enableDdc,
         show_utterances: this.options.showUtterances,
-        enable_nonstream: this.options.enableNonstream
+        enable_nonstream: this.options.enableNonstream,
+        end_window_size: this.options.endWindowSize
       }
     }
     try {
+      console.log('豆包首包参数:', JSON.stringify(payload))
       const packet = await VolcWsProtocol.buildFullRequestPacket(payload, this.sequence)
       await this.ws?.send(packet)
     } catch (error) {
-      console.log('sssssss')
+      console.log('豆包首包发送失败')
     }
   }
 
@@ -246,8 +248,17 @@ export class VolcSpeechRecognizer implements AudioRecorderStatusListener {
         return
       }
 
+      console.log('豆包返回数据：' + JSON.stringify(frame))
+
+
       if (frame.payload) {
         this.speechCallback?.onResult(frame.payload, frame.isLastPackage)
+        let definite = frame.payload.result?.utterances?.[0].definite
+        if (definite) {
+          this.speechCallback?.onEndOfSpeech()
+          console.log('豆包返回暂停' )
+          this.reset(true)
+        }
       }
 
       if (frame.isLastPackage) {

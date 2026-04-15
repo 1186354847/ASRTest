@@ -161,16 +161,10 @@ export class AudioRecorder {
     for (let i = 0; i < int16Array.length; i++) {
       maxVal = Math.max(maxVal, Math.abs(int16Array[i]));
     }
-    // console.log('ssssssadadwadsda  000000 ' + maxVal)
     let vol = 20 * Math.log10(maxVal / 32767);
-    // console.log('ssssssadadwadsda  111111 ' + vol)
-    vol = 80 - Math.abs(vol);
-
+    vol = Math.abs(vol);
     if (vol >= 80) {
       vol = 80;
-    }
-    if (vol <= 0) {
-      vol = 0;
     }
     return vol;
   }

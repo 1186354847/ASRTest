@@ -51,6 +51,7 @@ export interface VolcRequestPayload {
   enable_ddc: boolean
   show_utterances: boolean
   enable_nonstream: boolean
+  end_window_size: number
 }
 
 export interface VolcFullClientRequestPayload {
@@ -73,6 +74,7 @@ export class VolcAsrRequestOptions {
   showUtterances: boolean = true
   enableNonstream: boolean = false
   segmentDurationMs: number = 200
+  endWindowSize: number = 1000
 }
 
 export class VolcResponseFrame {
