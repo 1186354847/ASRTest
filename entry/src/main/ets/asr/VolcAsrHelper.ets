@@ -19,18 +19,25 @@ export class VolcAsrHelper implements VolcRecognizerListener {
   listener?: SpeechAsrCallback = undefined
   options: VolcAsrRequestOptions = new VolcAsrRequestOptions()
 
-  initialize() {
-    const appId = '7452939681'
-    const accessToken = '-oIAiPanKFvyN9_1oo228glyCRfeJZEC'
-    const resourceId = 'volc.seedasr.sauc.duration'
-    const hostUrl = 'wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_async'
+  initialize(param: object) {
+
+    let appId: string = param["appKey"]
+    let accessToken: string = param["accessKey"]
+    let resourceId: string = param["resourceId"]
+    let connectId: string = param["connectId"]
+    let hostUrl: string = param["url"]
+    // const appId = '7452939681'
+    // const accessToken = '-oIAiPanKFvyN9_1oo228glyCRfeJZEC'
+    // const resourceId = 'volc.seedasr.sauc.duration'
+    // const hostUrl = 'wss://openspeech.bytedance.com/api/v3/sauc/bigmodel'
     VolcSpeechUtility.createUtility(
-      `appId=${appId},accessToken=${accessToken},resourceId=${resourceId},hostUrl=${hostUrl}`
+      `appId=${appId},accessToken=${accessToken},resourceId=${resourceId},hostUrl=${hostUrl},connectId=${connectId}`
     )
   }
 
-  setParams(options?: Partial<VolcAsrRequestOptions>) {
+  setParams(eosTime?: number, bosTime?: number) {
     this.options = new VolcAsrRequestOptions()
+    this.options.endWindowSize = eosTime || 1000
   }
 
   startListening(listener: SpeechAsrCallback) {
