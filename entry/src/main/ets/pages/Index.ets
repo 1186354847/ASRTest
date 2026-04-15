@@ -18,7 +18,14 @@ struct SpeechToTextPage {
   aboutToAppear() {
     // 初始化 ASR 辅助类
     this.asrHelper = VolcAsrHelper.getInstance()
-    this.asrHelper.initialize()
+
+    let param = new Object({
+      appKey: '7452939681',
+      accessKey: '-oIAiPanKFvyN9_1oo228glyCRfeJZEC',
+      resourceId: 'volc.seedasr.sauc.duration',
+      url: 'wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_async'
+    })
+    this.asrHelper.initialize(param)
 
 
     let atManager: abilityAccessCtrl.AtManager = abilityAccessCtrl.createAtManager();
