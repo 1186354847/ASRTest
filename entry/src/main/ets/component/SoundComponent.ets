@@ -1,16 +1,19 @@
 @Component
 export struct SoundComponent {
-  @Prop volumeNumber: number
+  @Prop volumeNumber: number = 0
   maxVolume: number = 100 // 最大音量
+  noise: number = 20 // 噪音阈值
   @Prop lineColor: ResourceStr = '#ee2233'
   lineSpace: number = 10 // 间距
   lineWidth: number = 5 // 宽
   maxHeight: number = 100
+  maxWidth: number = 200
   @State lineHeightList: number[] = []
   timer?: number
 
   aboutToAppear(): void {
     console.info('SoundComponent aboutToAppear started');
+    this.lineHeightList = this.createMinHeightList()
     // 清除可能存在的旧定时器
     if (this.timer) {
       clearInterval(this.timer);
@@ -29,32 +32,53 @@ export struct SoundComponent {
   }
 
   volumeChange() {
+    const minHeight = this.lineWidth
+    const count = this.getLineCount()
+    const safeVolume = this.volumeNumber ?? 0
 
-    // 1. 计算当前音量对应的基准比例 (0.0 - 1.0)
-    const ratio = Math.min(this.volumeNumber / this.maxVolume, 1.0);
-
-    // 2. 确定生成波纹的数量 (如果列表为空则默认生成 20 个，保持数量稳定)
-    const count = this.lineHeightList.length > 0 ? this.lineHeightList.length : 20;
-    const newList: number[] = [];
-
-    for (let i = 0; i < count; i++) {
-      // 3. 计算随机高度：基准高度 * 随机因子
-      // 随机因子范围建议在 0.5 ~ 1.5 之间，让波形有起伏但不过于夸张
-      const randomFactor = 0.5 + Math.random();
-      let height = ratio * this.maxHeight * randomFactor;
-
-      // 4. 取整并再次确保不超过 maxHeight (防止随机因子过大导致溢出)
-      height = Math.floor(height);
-      if (height > this.maxHeight) {
-        height = this.maxHeight;
-      }
-
-      // 如果计算结果为 0，可以选择保留 0 或者给一个极小值避免完全消失，这里按需求允许为 0
-      newList.push(height);
+    if (safeVolume <= this.noise || this.maxVolume <= 0) {
+      this.lineHeightList = this.createMinHeightList()
+      return
     }
 
-    // 5. 更新状态触发 UI 刷新
-    this.lineHeightList = newList;
+    const ratio = Math.min(Math.max((safeVolume - this.noise) / (this.maxVolume - this.noise), 0), 1.0)
+    const newList: number[] = []
+
+    for (let i = 0; i < count; i++) {
+      const randomFactor = 0.8 + Math.random() * 0.4
+      let height = ratio * this.maxHeight * randomFactor
+      console.log('aaaaaaaa safeVolume: ' + safeVolume + ' ratio: ' + ratio + ' height: ' + height)
+
+      height = Math.floor(height)
+      if (height > this.maxHeight) {
+        height = this.maxHeight
+      }
+      if (height < minHeight) {
+        height = minHeight
+      }
+
+      newList.push(height)
+    }
+
+    this.lineHeightList = newList
+  }
+
+  private getLineCount(): number {
+    const unitWidth = this.lineWidth + this.lineSpace
+    if (unitWidth <= 0 || this.maxWidth <= 0) {
+      return 1
+    }
+    return Math.max(1, Math.floor((this.maxWidth + this.lineSpace) / unitWidth))
+  }
+
+  private createMinHeightList(): number[] {
+    const list: number[] = []
+    const minHeight = this.lineWidth
+    const count = this.getLineCount()
+    for (let i = 0; i < count; i++) {
+      list.push(minHeight)
+    }
+    return list
   }
 
   build() {
@@ -65,9 +89,11 @@ export struct SoundComponent {
         }.backgroundColor(this.lineColor)
         .width(this.lineWidth)
         .height(item)
+        .borderRadius(this.lineWidth / 2)
       })
     }.width('100%')
-    .height(200)
+    .height(this.maxHeight)
+    .width(this.maxWidth)
     .justifyContent(FlexAlign.Center)
     .alignItems(VerticalAlign.Center)
   }

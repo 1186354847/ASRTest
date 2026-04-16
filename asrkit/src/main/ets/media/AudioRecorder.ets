@@ -153,20 +153,30 @@ export class AudioRecorder {
    */
   private volumeFrom16bit(data: ArrayBuffer): number {
     const int16Array = new Int16Array(data);
-    const allZeros = int16Array.every(value => value === 0);
-    if (allZeros) {
+    if (int16Array.length === 0) {
       return 0;
     }
-    let maxVal = 0;
+
+    let sum = 0;
     for (let i = 0; i < int16Array.length; i++) {
-      maxVal = Math.max(maxVal, Math.abs(int16Array[i]));
+      const sample = int16Array[i] / 32768;
+      sum += sample * sample;
     }
-    let vol = 20 * Math.log10(maxVal / 32767);
-    vol = Math.abs(vol);
-    if (vol >= 80) {
-      vol = 80;
+
+    const rms = Math.sqrt(sum / int16Array.length);
+    if (rms <= 0) {
+      return 0;
     }
-    return vol;
+
+    let db = 20 * Math.log10(rms);
+    if (db < -60) {
+      db = -60;
+    }
+    if (db > 0) {
+      db = 0;
+    }
+
+    return Math.floor(((db + 60) / 60) * 100);
   }
 
 
