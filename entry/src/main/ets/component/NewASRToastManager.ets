@@ -123,7 +123,7 @@ export class NewASRToastManager {
       autoCancel: false,
       alignment: DialogAlignment.Bottom,
       onWillDismiss: (_dismissDialogAction: DismissDialogAction) => {
-        this.contentNode = null
+        this.handleLockedAction(NewASRPressArea.CANCEL)
       }
     })
   }
