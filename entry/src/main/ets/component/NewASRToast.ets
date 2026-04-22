@@ -222,16 +222,23 @@ struct NewASRToast {
             .fontWeight(FontWeight.Medium)
             .margin({ top: 13, bottom: 15 })
 
-          Row({ space: 5 }) {
-            ForEach([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21], (item: number) => {
-              Column()
-                .width(2.5)
-                .height(item % 4 === 0 ? 18 : item % 3 === 0 ? 13 : 9)
-                .backgroundColor(item < 10 ? '#FF4C79' : '#A844F4')
-                .borderRadius(2)
-            })
+          Row() {
+            Row({ space: 5 }) {
+              ForEach([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+                (item: number) => {
+                  Column()
+                    .width(2.5)
+                    .height(item % 4 === 0 ? 18 : item % 3 === 0 ? 13 : 9)
+                    .borderRadius(2)
+                    .backgroundColor('#fff')
+                })
+            }.blendMode(BlendMode.DST_IN, BlendApplyType.OFFSCREEN)
           }
-          .height(28)
+          .linearGradient({
+            angle: 270,
+            colors: [['#B347F8', 0.05], ['#F14575', 1]]
+          })
+          .blendMode(BlendMode.SRC_OVER, BlendApplyType.OFFSCREEN)
           .alignItems(VerticalAlign.Center)
         }
         .width('100%')
