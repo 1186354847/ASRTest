@@ -122,6 +122,7 @@ export class NewASRToastManager {
     promptAction.openCustomDialog(this.contentNode, {
       autoCancel: false,
       alignment: DialogAlignment.Bottom,
+      transition: TransitionEffect.IDENTITY,
       onWillDismiss: (_dismissDialogAction: DismissDialogAction) => {
         this.handleLockedAction(NewASRPressArea.CANCEL)
       }
