@@ -211,8 +211,12 @@ struct NewASRToast {
           .height(1200)
           .fill('#FFFFFF')
 
+        Image($r('app.media.bg_asr_toast'))
+          .width(470)
+          .height(250)
+
         Column() {
-          Text(this.isLocked ? '' : '松手 发送')
+          Text(this.isLocked ? ' ' : '松手 发送')
             .fontSize(13)
             .fontColor(this.currentArea === NewASRPressArea.VOICE ? '#5D4A9B' : '#6F6684')
             .fontWeight(FontWeight.Medium)
