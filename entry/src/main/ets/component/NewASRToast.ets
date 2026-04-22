@@ -30,22 +30,67 @@ struct NewASRToast {
   @Prop actionParam: NewASRToastParam
   @StorageLink(NEW_ASR_AREA_STORAGE_KEY) currentArea: NewASRPressArea = NewASRPressArea.VOICE
   @StorageLink(NEW_ASR_LOCKED_STORAGE_KEY) isLocked: boolean = false
+  @State demoText: string = '北京明天天气怎么样'
   private toastManager: NewASRToastManager = NewASRToastManager.getInstance()
+  private demoTextTimer?: number = undefined
+  private textScroller: Scroller = new Scroller()
+  private needAtEnd: boolean = false
+
+  aboutToAppear(): void {
+    this.demoTextTimer = setInterval(() => {
+      this.demoText += '，自动增加几个字'
+      if (this.needAtEnd) {
+        const shouldFollowBottom = this.textScroller.isAtEnd()
+        if (shouldFollowBottom) {
+          setTimeout(() => {
+            this.textScroller.scrollEdge(Edge.Bottom)
+          }, 0)
+        }
+        return
+      }
+      setTimeout(() => {
+        this.textScroller.scrollEdge(Edge.Bottom)
+      }, 0)
+
+    }, 500)
+  }
+
+  aboutToDisappear(): void {
+    if (this.demoTextTimer !== undefined) {
+      clearInterval(this.demoTextTimer)
+      this.demoTextTimer = undefined
+    }
+  }
 
   build() {
     Column() {
       Blank()
         .layoutWeight(1)
 
-      Text('北京明天天气怎么样')
-        .width('86%')
-        .height(40)
-        .padding({ left: 16, right: 16 })
-        .fontSize(14)
-        .fontColor('#3B3B45')
-        .backgroundColor('#FFFFFF')
-        .borderRadius(11)
-        .margin({ bottom: 22 })
+      Scroll(this.textScroller) {
+        Text(this.demoText)
+          .width('100%')
+          .fontSize(14)
+          .lineHeight(22)
+          .fontColor('#3B3B45')
+      }
+      .width('86%')
+      .constraintSize({ minHeight: 40, maxHeight: 134 })
+      .padding({
+        left: 16,
+        right: 16,
+        top: 12,
+        bottom: 12
+      })
+      .backgroundColor('#FFFFFF')
+      .scrollBar(BarState.Off)
+      .borderRadius(11)
+      .margin({ bottom: 22 })
+      .onWillScroll((xOffset: number, yOffset: number, scrollState: ScrollState, scrollSource: ScrollSource) => {
+        if (scrollSource == ScrollSource.DRAG || scrollSource == ScrollSource.SCROLL_BAR) {
+          this.needAtEnd = true
+        }
+      })
 
       Row() {
         Column() {
