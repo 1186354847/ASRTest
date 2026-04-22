@@ -38,49 +38,60 @@ struct NewASRToast {
         .layoutWeight(1)
 
       Text('北京明天天气怎么样')
-        .width(325)
-        .height(43)
-        .padding({ left: 18, right: 18 })
-        .fontSize(15)
+        .width(320)
+        .height(40)
+        .padding({ left: 16, right: 16 })
+        .fontSize(14)
         .fontColor('#3B3B45')
         .backgroundColor('#FFFFFF')
         .borderRadius(11)
-        .margin({ bottom: 30 })
+        .margin({ bottom: 22 })
 
       Row() {
         Column() {
           Column() {
             Image($r('app.media.startIcon'))
-              .width(20)
-              .height(20)
-              .margin({ bottom: 6 })
+              .width(16)
+              .height(16)
+              .margin({ bottom: 5 })
 
             Text(this.isLocked ? '取消' : '左滑取消')
-              .fontSize(14)
+              .fontSize(12)
               .fontColor('#4F4C5D')
           }
           .width(112)
-          .height(58)
+          .height(70)
           .justifyContent(FlexAlign.Center)
           .alignItems(HorizontalAlign.Center)
-          .backgroundColor(this.currentArea === NewASRPressArea.CANCEL ? '#FFFFFF' : 'rgba(255, 255, 255, 0.72)')
+          .linearGradient({
+            angle: 171,
+            colors: this.currentArea === NewASRPressArea.CANCEL ?
+              [['rgba(255, 255, 255, 0.95)', 0.14], ['rgba(252, 244, 255, 1)', 0.58]] :
+              [['rgba(249, 237, 253, 0.67)', 0.14], ['rgba(252, 244, 255, 0.95)', 0.58]]
+          })
           .borderRadius(24)
+          .border({
+            width: 0.5,
+            color: 'rgba(252, 244, 255, 0.72)'
+          })
           .shadow({
-            radius: this.currentArea === NewASRPressArea.CANCEL ? 18 : 8,
-            color: 'rgba(91, 86, 116, 0.18)',
+            radius: this.currentArea === NewASRPressArea.CANCEL ? 10 : 5,
+            color: 'rgba(176, 104, 157, 0.10)',
             offsetX: 0,
-            offsetY: 4
+            offsetY: 2
           })
           .scale({
             x: this.currentArea === NewASRPressArea.CANCEL ? 1.04 : 1,
             y: this.currentArea === NewASRPressArea.CANCEL ? 1.04 : 1
           })
-          .rotate({ angle: -6 })
+          .rotate({ angle: -5 })
         }
         .width('35%')
         .height('100%')
-        .justifyContent(FlexAlign.Center)
+        // 外层是命中矩形，内层按钮贴近底部，保证最低点贴近大按钮弧形最高处。
+        .justifyContent(FlexAlign.End)
         .alignItems(HorizontalAlign.Center)
+        .padding({ bottom: 5 })
         .onClick(() => {
           if (this.isLocked) {
             this.toastManager.handleLockedAction(NewASRPressArea.CANCEL)
@@ -90,25 +101,34 @@ struct NewASRToast {
         Column() {
           Column() {
             Image($r('app.media.startIcon'))
-              .width(20)
-              .height(20)
-              .margin({ bottom: 6 })
+              .width(16)
+              .height(16)
+              .margin({ bottom: 5 })
 
             Text(this.isLocked ? '发送' : '上滑锁定')
-              .fontSize(14)
+              .fontSize(12)
               .fontColor('#4F4C5D')
           }
-          .width(100)
-          .height(58)
+          .width(104)
+          .height(70)
           .justifyContent(FlexAlign.Center)
           .alignItems(HorizontalAlign.Center)
-          .backgroundColor(this.currentArea === NewASRPressArea.LOCK ? '#FFFFFF' : 'rgba(255, 255, 255, 0.72)')
+          .linearGradient({
+            angle: 171,
+            colors: this.currentArea === NewASRPressArea.LOCK ?
+              [['rgba(255, 255, 255, 0.95)', 0.14], ['rgba(252, 244, 255, 1)', 0.58]] :
+              [['rgba(249, 237, 253, 0.67)', 0.14], ['rgba(252, 244, 255, 0.95)', 0.58]]
+          })
           .borderRadius(24)
+          .border({
+            width: 0.5,
+            color: 'rgba(252, 244, 255, 0.72)'
+          })
           .shadow({
-            radius: this.currentArea === NewASRPressArea.LOCK ? 18 : 8,
-            color: 'rgba(91, 86, 116, 0.18)',
+            radius: this.currentArea === NewASRPressArea.LOCK ? 10 : 5,
+            color: 'rgba(176, 104, 157, 0.10)',
             offsetX: 0,
-            offsetY: 4
+            offsetY: 2
           })
           .scale({
             x: this.currentArea === NewASRPressArea.LOCK ? 1.04 : 1,
@@ -117,8 +137,10 @@ struct NewASRToast {
         }
         .width('30%')
         .height('100%')
-        .justifyContent(FlexAlign.Center)
+        // 中间按钮底边对齐左右倾斜按钮底边的高点，而不是跟左右最低点对齐。
+        .justifyContent(FlexAlign.End)
         .alignItems(HorizontalAlign.Center)
+        .padding({ bottom: 10 })
         .onClick(() => {
           if (this.isLocked) {
             this.toastManager.handleLockedAction(NewASRPressArea.LOCK)
@@ -128,36 +150,47 @@ struct NewASRToast {
         Column() {
           Column() {
             Image($r('app.media.startIcon'))
-              .width(20)
-              .height(20)
-              .margin({ bottom: 6 })
+              .width(16)
+              .height(16)
+              .margin({ bottom: 5 })
 
             Text(this.isLocked ? '转文字' : '右滑转文字')
-              .fontSize(14)
+              .fontSize(12)
               .fontColor('#4F4C5D')
           }
           .width(112)
-          .height(58)
+          .height(70)
           .justifyContent(FlexAlign.Center)
           .alignItems(HorizontalAlign.Center)
-          .backgroundColor(this.currentArea === NewASRPressArea.TEXT ? '#FFFFFF' : 'rgba(255, 255, 255, 0.72)')
+          .linearGradient({
+            angle: 171,
+            colors: this.currentArea === NewASRPressArea.TEXT ?
+              [['rgba(255, 255, 255, 0.95)', 0.14], ['rgba(252, 244, 255, 1)', 0.58]] :
+              [['rgba(249, 237, 253, 0.67)', 0.14], ['rgba(252, 244, 255, 0.95)', 0.58]]
+          })
           .borderRadius(24)
+          .border({
+            width: 0.5,
+            color: 'rgba(252, 244, 255, 0.72)'
+          })
           .shadow({
-            radius: this.currentArea === NewASRPressArea.TEXT ? 18 : 8,
-            color: 'rgba(91, 86, 116, 0.18)',
+            radius: this.currentArea === NewASRPressArea.TEXT ? 10 : 5,
+            color: 'rgba(176, 104, 157, 0.10)',
             offsetX: 0,
-            offsetY: 4
+            offsetY: 2
           })
           .scale({
             x: this.currentArea === NewASRPressArea.TEXT ? 1.04 : 1,
             y: this.currentArea === NewASRPressArea.TEXT ? 1.04 : 1
           })
-          .rotate({ angle: 6 })
+          .rotate({ angle: 5 })
         }
         .width('35%')
         .height('100%')
-        .justifyContent(FlexAlign.Center)
+        // 外层是命中矩形，内层按钮贴近底部，保证最低点贴近大按钮弧形最高处。
+        .justifyContent(FlexAlign.End)
         .alignItems(HorizontalAlign.Center)
+        .padding({ bottom: 5 })
         .onClick(() => {
           if (this.isLocked) {
             this.toastManager.handleLockedAction(NewASRPressArea.TEXT)
@@ -169,33 +202,43 @@ struct NewASRToast {
       .alignItems(VerticalAlign.Center)
 
       Stack({ alignContent: Alignment.Top }) {
+        Circle()
+          .width(1800)
+          .height(1800)
+          .fill('#FFFFFF')
+          .linearGradient({
+            angle: 243,
+            colors: [
+              ['rgba(230, 159, 220, 0.12)', 0.17],
+              ['rgba(117, 113, 239, 0.12)', 0.45],
+              ['rgba(143, 173, 221, 0.12)', 0.69],
+              ['rgba(171, 237, 203, 0.12)', 0.94]
+            ]
+          })
+          .position({ x: -725, y: 0 })
+
         Column() {
           Text(this.isLocked ? '' : '松手 发送')
-            .fontSize(15)
+            .fontSize(13)
             .fontColor(this.currentArea === NewASRPressArea.VOICE ? '#5D4A9B' : '#6F6684')
             .fontWeight(FontWeight.Medium)
-            .margin({ top: 18, bottom: 18 })
+            .margin({ top: 13, bottom: 15 })
 
           Row({ space: 5 }) {
             ForEach([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21], (item: number) => {
               Column()
-                .width(3)
-                .height(item % 4 === 0 ? 22 : item % 3 === 0 ? 16 : 11)
+                .width(2.5)
+                .height(item % 4 === 0 ? 18 : item % 3 === 0 ? 13 : 9)
                 .backgroundColor(item < 10 ? '#FF4C79' : '#A844F4')
                 .borderRadius(2)
             })
           }
-          .height(34)
+          .height(28)
           .alignItems(VerticalAlign.Center)
         }
-        .width('130%')
-        .height(175)
+        .width('100%')
+        .height(150)
         .alignItems(HorizontalAlign.Center)
-        .backgroundColor(this.currentArea === NewASRPressArea.VOICE ? '#F4ECFF' : '#F8F2FF')
-        .borderRadius({
-          topLeft: 180,
-          topRight: 180
-        })
       }
       .width('100%')
       .height(150)
