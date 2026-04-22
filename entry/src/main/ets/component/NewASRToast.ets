@@ -38,7 +38,7 @@ struct NewASRToast {
         .layoutWeight(1)
 
       Text('北京明天天气怎么样')
-        .width(320)
+        .width('86%')
         .height(40)
         .padding({ left: 16, right: 16 })
         .fontSize(14)
@@ -56,11 +56,11 @@ struct NewASRToast {
               .margin({ bottom: 5 })
 
             Text(this.isLocked ? '取消' : '左滑取消')
-              .fontSize(12)
+              .fontSize(13)
               .fontColor('#4F4C5D')
           }
-          .width(112)
-          .height(70)
+          .width('90%')
+          .height(65)
           .justifyContent(FlexAlign.Center)
           .alignItems(HorizontalAlign.Center)
           .linearGradient({
@@ -84,9 +84,10 @@ struct NewASRToast {
             x: this.currentArea === NewASRPressArea.CANCEL ? 1.04 : 1,
             y: this.currentArea === NewASRPressArea.CANCEL ? 1.04 : 1
           })
-          .rotate({ angle: -5 })
+          .rotate({ angle: -12 })
         }
         .width('35%')
+        .constraintSize({ maxWidth: 150 })
         .height('100%')
         // 外层是命中矩形，内层按钮贴近底部，保证最低点贴近大按钮弧形最高处。
         .justifyContent(FlexAlign.End)
@@ -106,11 +107,11 @@ struct NewASRToast {
               .margin({ bottom: 5 })
 
             Text(this.isLocked ? '发送' : '上滑锁定')
-              .fontSize(12)
+              .fontSize(13)
               .fontColor('#4F4C5D')
           }
-          .width(104)
-          .height(70)
+          .width('90%')
+          .height(65)
           .justifyContent(FlexAlign.Center)
           .alignItems(HorizontalAlign.Center)
           .linearGradient({
@@ -136,11 +137,12 @@ struct NewASRToast {
           })
         }
         .width('30%')
+        .constraintSize({ maxWidth: 130 })
         .height('100%')
         // 中间按钮底边对齐左右倾斜按钮底边的高点，而不是跟左右最低点对齐。
         .justifyContent(FlexAlign.End)
         .alignItems(HorizontalAlign.Center)
-        .padding({ bottom: 10 })
+        .padding({ bottom: 17 })
         .onClick(() => {
           if (this.isLocked) {
             this.toastManager.handleLockedAction(NewASRPressArea.LOCK)
@@ -155,11 +157,11 @@ struct NewASRToast {
               .margin({ bottom: 5 })
 
             Text(this.isLocked ? '转文字' : '右滑转文字')
-              .fontSize(12)
+              .fontSize(13)
               .fontColor('#4F4C5D')
           }
-          .width(112)
-          .height(70)
+          .width('90%')
+          .height(65)
           .justifyContent(FlexAlign.Center)
           .alignItems(HorizontalAlign.Center)
           .linearGradient({
@@ -183,9 +185,10 @@ struct NewASRToast {
             x: this.currentArea === NewASRPressArea.TEXT ? 1.04 : 1,
             y: this.currentArea === NewASRPressArea.TEXT ? 1.04 : 1
           })
-          .rotate({ angle: 5 })
+          .rotate({ angle: 12 })
         }
         .width('35%')
+        .constraintSize({ maxWidth: 150 })
         .height('100%')
         // 外层是命中矩形，内层按钮贴近底部，保证最低点贴近大按钮弧形最高处。
         .justifyContent(FlexAlign.End)
@@ -200,22 +203,13 @@ struct NewASRToast {
       .width('100%')
       .height(100)
       .alignItems(VerticalAlign.Center)
+      .justifyContent(FlexAlign.Center)
 
       Stack({ alignContent: Alignment.Top }) {
         Circle()
-          .width(1800)
-          .height(1800)
+          .width(1200)
+          .height(1200)
           .fill('#FFFFFF')
-          .linearGradient({
-            angle: 243,
-            colors: [
-              ['rgba(230, 159, 220, 0.12)', 0.17],
-              ['rgba(117, 113, 239, 0.12)', 0.45],
-              ['rgba(143, 173, 221, 0.12)', 0.69],
-              ['rgba(171, 237, 203, 0.12)', 0.94]
-            ]
-          })
-          .position({ x: -725, y: 0 })
 
         Column() {
           Text(this.isLocked ? '' : '松手 发送')
@@ -237,7 +231,7 @@ struct NewASRToast {
           .alignItems(VerticalAlign.Center)
         }
         .width('100%')
-        .height(150)
+        .height('100%')
         .alignItems(HorizontalAlign.Center)
       }
       .width('100%')
@@ -245,7 +239,7 @@ struct NewASRToast {
       .clip(true)
     }
     .width('100%')
-    .height(800)
+    .height('100%')
     .backgroundColor('rgba(255, 255, 255, 0.08)')
   }
 }

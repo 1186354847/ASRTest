@@ -23,9 +23,6 @@ export enum NewASRPressArea {
 }
 
 export class NewASRToastManager {
-  private constructor() {
-  }
-
   private static instance: NewASRToastManager
   private contentNode: ComponentContent<NewASRToastParam> | null = null
   private longPressTimer?: number = undefined
@@ -34,10 +31,18 @@ export class NewASRToastManager {
   private isLocked: boolean = false
   private currentPoint: NewASRTouchPoint | null = null
   private currentArea: NewASRPressArea = NewASRPressArea.VOICE
-  // 当前 demo 先按 350x800 的固定坐标模型计算，后续可替换为真实窗口尺寸。
-  private readonly pageWidth: number = 350
-  private readonly pageHeight: number = 800
+  private readonly pageWidth: number
+  private readonly pageHeight: number
   private readonly voiceAreaHeight: number = 150
+
+  private constructor() {
+    const rect = EntryAbility.ability.windowStage?.getMainWindowSync().getWindowProperties().windowRect
+    const uiContext = EntryAbility.ability.windowStage?.getMainWindowSync().getUIContext()
+    const width = rect?.width ?? 0
+    const height = rect?.height ?? 0
+    this.pageWidth = width > 0 ? (uiContext?.px2vp(width) ?? 350) : 350
+    this.pageHeight = height > 0 ? (uiContext?.px2vp(height) ?? 800) : 800
+  }
 
   public static getInstance(): NewASRToastManager {
     if (!NewASRToastManager.instance) {
@@ -206,7 +211,7 @@ export class NewASRToastManager {
       return NewASRPressArea.VOICE
     }
 
-    // 底部 150 高度整块作为“松手发送语音”区域。
+    // 底部 150 高度整块作为“松手发送语音”区域，对齐 UI 中的大按钮区域。
     if (point.y >= this.pageHeight - this.voiceAreaHeight) {
       return NewASRPressArea.VOICE
     }
