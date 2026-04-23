@@ -44,7 +44,6 @@ export class NewASRToastManager implements SpeechAsrCallback {
   private isLocked: boolean = false
   private isFinishing: boolean = false
   private recognizedText: string = ''
-  private stopResolve?: () => void = undefined
   private currentPoint: NewASRTouchPoint | null = null
   private currentArea: NewASRPressArea = NewASRPressArea.VOICE
   private readonly pageWidth: number
@@ -90,7 +89,7 @@ export class NewASRToastManager implements SpeechAsrCallback {
         if (this.isPressing) {
           this.openToast()
         }
-      }, 300)
+      }, 100)
       return
     }
 
@@ -192,7 +191,7 @@ export class NewASRToastManager implements SpeechAsrCallback {
     }
 
     if (area === NewASRPressArea.TEXT) {
-      await this.stopAsrAndWait()
+      this.stopAsr()
       this.actionParam?.onTextSend?.(this.recognizedText)
       this.resetState()
       return
@@ -200,7 +199,7 @@ export class NewASRToastManager implements SpeechAsrCallback {
 
     if (area === NewASRPressArea.VOICE) {
       try {
-        await this.stopAsrAndWait()
+        this.stopAsr()
         const result = await this.convertDefaultPcmToWav()
         this.actionParam?.onVoiceSend?.(result.path, result.duration)
       } catch (error) {
@@ -217,7 +216,6 @@ export class NewASRToastManager implements SpeechAsrCallback {
 
   private resetState(): void {
     this.clearAutoStopTimer()
-    this.stopResolve = undefined
     this.asrHelper = null
     this.actionParam = null
     this.isFinishing = false
@@ -322,27 +320,12 @@ export class NewASRToastManager implements SpeechAsrCallback {
     }, maxRecordDurationMs)
   }
 
-  private async stopAsrAndWait(): Promise<void> {
+  private stopAsr(): void {
     this.clearAutoStopTimer()
     if (!this.asrHelper) {
       return
     }
-
-    await new Promise<void>((resolve: () => void) => {
-      let done = false
-      this.stopResolve = () => {
-        if (done) {
-          return
-        }
-        done = true
-        this.stopResolve = undefined
-        resolve()
-      }
-      setTimeout(() => {
-        this.stopResolve?.()
-      }, 1500)
-      this.asrHelper?.stopListening()
-    })
+    this.asrHelper.stopListening()
   }
 
   private cancelAsr(): void {
@@ -350,7 +333,6 @@ export class NewASRToastManager implements SpeechAsrCallback {
     this.syncVolumeToView(0)
     this.asrHelper?.cancel()
     this.asrHelper = null
-    this.stopResolve?.()
   }
 
   private clearAutoStopTimer(): void {
@@ -383,7 +365,6 @@ export class NewASRToastManager implements SpeechAsrCallback {
     console.error(`new asr error code=${code}, message=${message}`)
     this.syncVolumeToView(0)
     if (this.isFinishing) {
-      this.stopResolve?.()
       return
     }
     void this.finishByArea(NewASRPressArea.CANCEL)
@@ -400,7 +381,6 @@ export class NewASRToastManager implements SpeechAsrCallback {
 
   onComplete(): void {
     this.syncVolumeToView(0)
-    this.stopResolve?.()
   }
 }
 

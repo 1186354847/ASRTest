@@ -107,15 +107,20 @@ export class AudioRecorder {
         .then(async () => {
           this.audioLoop = true
           this.audioStatusCallback?.onRecordStart();
-          while (this.audioLoop) {
-            // let bufferSize = await audioRecorder.getBufferSize();
-            let bufferSize = 1280;
-            if (bufferSize > 0) {
-              let buffer = await audioRecorder.read(bufferSize, true);
-              this.writeRecordBuffer(buffer)
-              const volume = this.volumeFrom16bit(buffer);
-              this.audioStatusCallback?.onRecordProgress(buffer, volume)
+          try {
+            while (this.audioLoop) {
+              // let bufferSize = await audioRecorder.getBufferSize();
+              let bufferSize = 1280;
+              if (bufferSize > 0) {
+                let buffer = await audioRecorder.read(bufferSize, true);
+                this.writeRecordBuffer(buffer)
+                const volume = this.volumeFrom16bit(buffer);
+                this.audioStatusCallback?.onRecordProgress(buffer, volume)
+              }
             }
+          } catch (error) {
+            this.closeRecordFile()
+            console.error(`${this.TAG}: start failed`);
           }
         }).catch((error: Object) => {
         this.closeRecordFile()
