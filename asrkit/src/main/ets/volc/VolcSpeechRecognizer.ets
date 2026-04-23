@@ -254,7 +254,7 @@ export class VolcSpeechRecognizer implements AudioRecorderStatusListener {
       if (frame.payload) {
         this.speechCallback?.onResult(frame.payload, frame.isLastPackage)
         let definite = frame.payload.result?.utterances?.[0].definite
-        if (definite) {
+        if (definite && this.options.autoStopOnDefinite) {
           this.speechCallback?.onEndOfSpeech()
           console.log('豆包返回暂停' )
           this.reset(true)

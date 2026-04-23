@@ -3,9 +3,14 @@ import EntryAbility from '../entryability/EntryAbility'
 import { NewASRToastBuilder, NewASRToastParam } from './NewASRToast'
 import { fileIo as fs } from '@kit.CoreFileKit'
 import { PcmToWavUtil } from '../asr/PcmToWavUtil'
+import { VolcAsrHelper } from '../asr/VolcAsrHelper'
+import { SpeechAsrCallback } from '../asr/SpeechAsrCallback'
+import { abilityAccessCtrl } from '@kit.AbilityKit'
 
 export const NEW_ASR_AREA_STORAGE_KEY = 'newASRArea'
 export const NEW_ASR_LOCKED_STORAGE_KEY = 'newASRLocked'
+export const NEW_ASR_TEXT_STORAGE_KEY = 'newASRText'
+export const NEW_ASR_VOLUME_STORAGE_KEY = 'newASRVolume'
 
 export class NewASRTouchPoint {
   x: number = 0
@@ -25,15 +30,21 @@ export enum NewASRPressArea {
 }
 
 const samplingRate = 16000
-const channels = 0x1 << 1
+const channels = 1
+const maxRecordDurationMs = 60000
 
-export class NewASRToastManager {
+export class NewASRToastManager implements SpeechAsrCallback {
   private static instance: NewASRToastManager
   private contentNode: ComponentContent<NewASRToastParam> | null = null
   private longPressTimer?: number = undefined
+  private autoStopTimer?: number = undefined
   private actionParam: NewASRToastParam | null = null
+  private asrHelper: VolcAsrHelper | null = null
   private isPressing: boolean = false
   private isLocked: boolean = false
+  private isFinishing: boolean = false
+  private recognizedText: string = ''
+  private stopResolve?: () => void = undefined
   private currentPoint: NewASRTouchPoint | null = null
   private currentArea: NewASRPressArea = NewASRPressArea.VOICE
   private readonly pageWidth: number
@@ -132,6 +143,7 @@ export class NewASRToastManager {
         this.handleLockedAction(NewASRPressArea.CANCEL)
       }
     })
+    this.startAsr()
   }
 
   private closeToast(): void {
@@ -167,21 +179,28 @@ export class NewASRToastManager {
   }
 
   private async finishByArea(area: NewASRPressArea): Promise<void> {
+    if (this.isFinishing) {
+      return
+    }
+    this.isFinishing = true
+
     if (area === NewASRPressArea.CANCEL) {
+      this.cancelAsr()
       this.actionParam?.onCancel?.()
       this.resetState()
       return
     }
 
     if (area === NewASRPressArea.TEXT) {
-      // 真实 ASR 接入前，先返回文字占位，保持回调链路完整。
-      this.actionParam?.onTextSend?.('[文字结果占位]')
+      await this.stopAsrAndWait()
+      this.actionParam?.onTextSend?.(this.recognizedText)
       this.resetState()
       return
     }
 
     if (area === NewASRPressArea.VOICE) {
       try {
+        await this.stopAsrAndWait()
         const result = await this.convertDefaultPcmToWav()
         this.actionParam?.onVoiceSend?.(result.path, result.duration)
       } catch (error) {
@@ -197,6 +216,11 @@ export class NewASRToastManager {
   }
 
   private resetState(): void {
+    this.clearAutoStopTimer()
+    this.stopResolve = undefined
+    this.asrHelper = null
+    this.actionParam = null
+    this.isFinishing = false
     this.isLocked = false
     this.syncLockedToView()
     this.closeToast()
@@ -251,6 +275,91 @@ export class NewASRToastManager {
     AppStorage.setOrCreate(NEW_ASR_LOCKED_STORAGE_KEY, this.isLocked)
   }
 
+  private syncTextToView(): void {
+    AppStorage.setOrCreate(NEW_ASR_TEXT_STORAGE_KEY, this.recognizedText)
+  }
+
+  private syncVolumeToView(volume: number): void {
+    AppStorage.setOrCreate(NEW_ASR_VOLUME_STORAGE_KEY, volume)
+  }
+
+  private startAsr(): void {
+    this.recognizedText = ''
+    this.syncTextToView()
+    this.syncVolumeToView(0)
+    this.clearAutoStopTimer()
+
+    const atManager = abilityAccessCtrl.createAtManager()
+    atManager.requestPermissionsFromUser(EntryAbility.ability.context, ['ohos.permission.MICROPHONE'])
+      .then(() => {
+        this.startAsrAfterPermission()
+      })
+      .catch(() => {
+        console.error('request microphone permission failed')
+        void this.finishByArea(NewASRPressArea.CANCEL)
+      })
+  }
+
+  private startAsrAfterPermission(): void {
+    if (this.contentNode === null || this.actionParam === null) {
+      return
+    }
+
+    this.asrHelper = VolcAsrHelper.getInstance()
+    this.asrHelper.initialize(new Object({
+      appKey: '7452939681',
+      accessKey: '-oIAiPanKFvyN9_1oo228glyCRfeJZEC',
+      resourceId: 'volc.seedasr.sauc.duration',
+      url: 'wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_async'
+    }))
+    this.asrHelper.setParams(maxRecordDurationMs)
+    // 这个长按弹窗由手势/60s 定时器控制结束，避免火山 definite 中间结果提前停止录音。
+    this.asrHelper.setAutoStopOnDefinite(false)
+    this.asrHelper.startListening(this)
+
+    this.autoStopTimer = setTimeout(() => {
+      void this.finishByArea(NewASRPressArea.VOICE)
+    }, maxRecordDurationMs)
+  }
+
+  private async stopAsrAndWait(): Promise<void> {
+    this.clearAutoStopTimer()
+    if (!this.asrHelper) {
+      return
+    }
+
+    await new Promise<void>((resolve: () => void) => {
+      let done = false
+      this.stopResolve = () => {
+        if (done) {
+          return
+        }
+        done = true
+        this.stopResolve = undefined
+        resolve()
+      }
+      setTimeout(() => {
+        this.stopResolve?.()
+      }, 1500)
+      this.asrHelper?.stopListening()
+    })
+  }
+
+  private cancelAsr(): void {
+    this.clearAutoStopTimer()
+    this.syncVolumeToView(0)
+    this.asrHelper?.cancel()
+    this.asrHelper = null
+    this.stopResolve?.()
+  }
+
+  private clearAutoStopTimer(): void {
+    if (this.autoStopTimer !== undefined) {
+      clearTimeout(this.autoStopTimer)
+      this.autoStopTimer = undefined
+    }
+  }
+
   private getAudioSavePath(): string {
     return this.actionParam?.path || EntryAbility.ability.context.cacheDir + '/StarWars10s-2C-48000-4SW.wav'
   }
@@ -265,6 +374,33 @@ export class NewASRToastManager {
     const util = new PcmToWavUtil(samplingRate, channels)
     const duration = await util.pcmToWav(inFile, outFile)
     return new NewASRAudioResult(wavPath, duration)
+  }
+
+  onBegin(): void {
+  }
+
+  onError(code: number, message: string): void {
+    console.error(`new asr error code=${code}, message=${message}`)
+    this.syncVolumeToView(0)
+    if (this.isFinishing) {
+      this.stopResolve?.()
+      return
+    }
+    void this.finishByArea(NewASRPressArea.CANCEL)
+  }
+
+  onVolumeChanged(volume: number): void {
+    this.syncVolumeToView(volume)
+  }
+
+  onListeningResult(text: string, _last: boolean): void {
+    this.recognizedText = text
+    this.syncTextToView()
+  }
+
+  onComplete(): void {
+    this.syncVolumeToView(0)
+    this.stopResolve?.()
   }
 }
 

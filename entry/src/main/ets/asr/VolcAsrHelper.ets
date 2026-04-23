@@ -40,6 +40,10 @@ export class VolcAsrHelper implements VolcRecognizerListener {
     this.options.endWindowSize = eosTime || 1000
   }
 
+  setAutoStopOnDefinite(autoStop: boolean) {
+    this.options.autoStopOnDefinite = autoStop
+  }
+
   startListening(listener: SpeechAsrCallback) {
     this.listener = listener
     this.volcAsr = new VolcSpeechRecognizer()

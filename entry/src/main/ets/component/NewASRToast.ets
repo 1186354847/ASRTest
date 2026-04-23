@@ -1,6 +1,8 @@
 import {
   NEW_ASR_AREA_STORAGE_KEY,
   NEW_ASR_LOCKED_STORAGE_KEY,
+  NEW_ASR_TEXT_STORAGE_KEY,
+  NEW_ASR_VOLUME_STORAGE_KEY,
   NewASRPressArea,
   NewASRToastManager
 } from './NewASRToastManager'
@@ -31,36 +33,30 @@ struct NewASRToast {
   @Prop actionParam: NewASRToastParam
   @StorageLink(NEW_ASR_AREA_STORAGE_KEY) currentArea: NewASRPressArea = NewASRPressArea.VOICE
   @StorageLink(NEW_ASR_LOCKED_STORAGE_KEY) isLocked: boolean = false
-  @State demoText: string = '北京明天天气怎么样'
+  @StorageLink(NEW_ASR_TEXT_STORAGE_KEY) @Watch('onTextChange') recognizedText: string = ''
+  @StorageLink(NEW_ASR_VOLUME_STORAGE_KEY) volumeLevel: number = 0
   private toastManager: NewASRToastManager = NewASRToastManager.getInstance()
-  private demoTextTimer?: number = undefined
   private textScroller: Scroller = new Scroller()
   private needAtEnd: boolean = false
 
-  aboutToAppear(): void {
-    this.demoTextTimer = setInterval(() => {
-      this.demoText += '，自动增加几个字'
-      if (this.needAtEnd) {
-        const shouldFollowBottom = this.textScroller.isAtEnd()
-        if (shouldFollowBottom) {
-          setTimeout(() => {
-            this.textScroller.scrollEdge(Edge.Bottom)
-          }, 0)
-        }
-        return
-      }
-      setTimeout(() => {
-        this.textScroller.scrollEdge(Edge.Bottom)
-      }, 0)
-
-    }, 500)
+  onTextChange(): void {
+    // 只有用户仍停留在底部时才自动跟随，用户手动上翻后不抢滚动位置。
+    if (this.needAtEnd && !this.textScroller.isAtEnd()) {
+      return
+    }
+    setTimeout(() => {
+      this.textScroller.scrollEdge(Edge.Bottom)
+    }, 0)
   }
 
-  aboutToDisappear(): void {
-    if (this.demoTextTimer !== undefined) {
-      clearInterval(this.demoTextTimer)
-      this.demoTextTimer = undefined
-    }
+  private getTextContent(): string {
+    return this.recognizedText.length > 0 ? this.recognizedText : '请开始说话'
+  }
+
+  private getWaveHeight(item: number): number {
+    const baseHeight = item % 4 === 0 ? 18 : item % 3 === 0 ? 13 : 9
+    const volumeRatio = Math.max(0.2, Math.min(this.volumeLevel, 100) / 100)
+    return Math.max(5, Math.floor(baseHeight * volumeRatio))
   }
 
   build() {
@@ -69,7 +65,7 @@ struct NewASRToast {
         .layoutWeight(1)
 
       Scroll(this.textScroller) {
-        Text(this.demoText)
+        Text(this.getTextContent())
           .width('100%')
           .fontSize(14)
           .lineHeight(22)
@@ -274,7 +270,7 @@ struct NewASRToast {
                 (item: number) => {
                   Column()
                     .width(2.5)
-                    .height(item % 4 === 0 ? 18 : item % 3 === 0 ? 13 : 9)
+                    .height(this.getWaveHeight(item))
                     .borderRadius(2)
                     .backgroundColor('#fff')
                 })

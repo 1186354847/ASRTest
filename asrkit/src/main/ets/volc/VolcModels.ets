@@ -75,6 +75,7 @@ export class VolcAsrRequestOptions {
   enableNonstream: boolean = false
   segmentDurationMs: number = 200
   endWindowSize: number = 1000
+  autoStopOnDefinite: boolean = true
 }
 
 export class VolcResponseFrame {
