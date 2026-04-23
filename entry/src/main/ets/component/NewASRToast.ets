@@ -6,7 +6,8 @@ import {
 } from './NewASRToastManager'
 
 export interface NewASRToastParam {
-  onVoiceSend?: (audioPath: string) => void
+  path?: string
+  onVoiceSend?: (audioPath: string, duration: number) => void
   onTextSend?: (text: string) => void
   onCancel?: () => void
 }

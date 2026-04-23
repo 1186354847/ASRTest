@@ -1,6 +1,8 @@
 import { ComponentContent } from '@kit.ArkUI'
 import EntryAbility from '../entryability/EntryAbility'
 import { NewASRToastBuilder, NewASRToastParam } from './NewASRToast'
+import { fileIo as fs } from '@kit.CoreFileKit'
+import { PcmToWavUtil } from '../asr/PcmToWavUtil'
 
 export const NEW_ASR_AREA_STORAGE_KEY = 'newASRArea'
 export const NEW_ASR_LOCKED_STORAGE_KEY = 'newASRLocked'
@@ -21,6 +23,9 @@ export enum NewASRPressArea {
   LOCK = 'lock',
   TEXT = 'text'
 }
+
+const samplingRate = 16000
+const channels = 0x1 << 1
 
 export class NewASRToastManager {
   private static instance: NewASRToastManager
@@ -99,11 +104,11 @@ export class NewASRToastManager {
 
     // 锁定态下中间按钮文案是“发送”，仍复用 LOCK 这个区域枚举。
     if (area === NewASRPressArea.LOCK) {
-      this.finishByArea(NewASRPressArea.VOICE)
+      void this.finishByArea(NewASRPressArea.VOICE)
       return
     }
 
-    this.finishByArea(area)
+    void this.finishByArea(area)
   }
 
   private openToast(): void {
@@ -158,10 +163,10 @@ export class NewASRToastManager {
       return
     }
 
-    this.finishByArea(this.currentArea)
+    void this.finishByArea(this.currentArea)
   }
 
-  private finishByArea(area: NewASRPressArea): void {
+  private async finishByArea(area: NewASRPressArea): Promise<void> {
     if (area === NewASRPressArea.CANCEL) {
       this.actionParam?.onCancel?.()
       this.resetState()
@@ -176,9 +181,15 @@ export class NewASRToastManager {
     }
 
     if (area === NewASRPressArea.VOICE) {
-      // 真实录音文件接入前，先返回音频地址占位。
-      this.actionParam?.onVoiceSend?.('[语音文件地址占位]')
-      this.resetState()
+      try {
+        const result = await this.convertDefaultPcmToWav()
+        this.actionParam?.onVoiceSend?.(result.path, result.duration)
+      } catch (error) {
+        console.error('convert default pcm to wav failed')
+        this.actionParam?.onVoiceSend?.(this.getAudioSavePath(), 0)
+      } finally {
+        this.resetState()
+      }
       return
     }
 
@@ -238,5 +249,31 @@ export class NewASRToastManager {
 
   private syncLockedToView(): void {
     AppStorage.setOrCreate(NEW_ASR_LOCKED_STORAGE_KEY, this.isLocked)
+  }
+
+  private getAudioSavePath(): string {
+    return this.actionParam?.path || EntryAbility.ability.context.cacheDir + '/StarWars10s-2C-48000-4SW.wav'
+  }
+
+  private async convertDefaultPcmToWav(): Promise<NewASRAudioResult> {
+    const pcmPath = EntryAbility.ability.context.cacheDir + '/StarWars10s-2C-48000-4SW.pcm'
+    const wavPath = this.getAudioSavePath()
+    const mode = fs.OpenMode.TRUNC | fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE
+    // 录音模块固定写入默认 PCM，这里只在语音返回时转换成调用方需要的 WAV 路径。
+    const inFile = fs.openSync(pcmPath, fs.OpenMode.READ_ONLY)
+    const outFile = fs.openSync(wavPath, mode)
+    const util = new PcmToWavUtil(samplingRate, channels)
+    const duration = await util.pcmToWav(inFile, outFile)
+    return new NewASRAudioResult(wavPath, duration)
+  }
+}
+
+class NewASRAudioResult {
+  path: string
+  duration: number
+
+  constructor(path: string, duration: number) {
+    this.path = path
+    this.duration = duration
   }
 }

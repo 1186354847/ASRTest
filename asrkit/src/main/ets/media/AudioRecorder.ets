@@ -4,6 +4,7 @@ import { SpeechError } from '../utils/exception/SpeechError';
 import { SpeechException } from '../utils/exception/SpeechException';
 import { common } from '@kit.AbilityKit';
 import { Logger } from '../utils/Logger';
+import fs from '@ohos.file.fs';
 
 
 /**
@@ -14,6 +15,9 @@ import { Logger } from '../utils/Logger';
 export class AudioRecorder {
   TAG = 'AudioRecorder';
   context: common.UIAbilityContext = getContext(this) as common.UIAbilityContext;
+  private readonly recordFileName: string = 'StarWars10s-2C-48000-4SW.pcm';
+  private tempFile?: fs.File;
+  private writeOffset: number = 0;
   //实时音频读取while循环
   audioLoop = false
   audioCapturer: audio.AudioCapturer | undefined = undefined;
@@ -58,8 +62,10 @@ export class AudioRecorder {
 
 
   async startRecording() {
+    this.openRecordFile()
     audio.createAudioCapturer(this.audioCapturerOptions, (err, capturer) => { // 创建AudioCapturer实例
       if (err) {
+        this.closeRecordFile()
         console.error(`Invoke createAudioCapturer failed, code is ${err.code}, message is ${err.message}`);
         this.audioStatusCallback?.onRecordError(new SpeechException(SpeechError.AUDIO_RECORDER_INIT_ERROR_CODE, "麦克风初始化失败"))
         return;
@@ -106,11 +112,13 @@ export class AudioRecorder {
             let bufferSize = 1280;
             if (bufferSize > 0) {
               let buffer = await audioRecorder.read(bufferSize, true);
+              this.writeRecordBuffer(buffer)
               const volume = this.volumeFrom16bit(buffer);
               this.audioStatusCallback?.onRecordProgress(buffer, volume)
             }
           }
         }).catch((error: Object) => {
+        this.closeRecordFile()
         this.audioStatusCallback?.onRecordError(new SpeechException(SpeechError.AUDIO_RECORDER_START_ERROR_CODE, "麦克风音频采集失败"))
       });
       // let count = 0;
@@ -190,6 +198,7 @@ export class AudioRecorder {
       if ((this.audioCapturer as audio.AudioCapturer).state.valueOf() !== audio.AudioState.STATE_RUNNING &&
         (this.audioCapturer as audio.AudioCapturer).state.valueOf() !== audio.AudioState.STATE_PAUSED) {
         console.info('Capturer is not running or paused');
+        this.closeRecordFile()
         this.audioStatusCallback?.onRecordStop()
         return;
       }
@@ -197,13 +206,16 @@ export class AudioRecorder {
         .then(() => {
           if ((this.audioCapturer as audio.AudioCapturer).state.valueOf() === audio.AudioState.STATE_STOPPED) {
             console.info('Capturer stopped');
+            this.closeRecordFile()
             this.audioStatusCallback?.onRecordStop()
           } else {
             console.error('Capturer stop failed');
+            this.closeRecordFile()
           }
         })
         .catch(() => {
           console.error('Capturer stop failed');
+          this.closeRecordFile()
         })
       // await (this.audioCapturer as audio.AudioCapturer).stop(); // 停止采集
       // if ((this.audioCapturer as audio.AudioCapturer).state.valueOf() === audio.AudioState.STATE_STOPPED) {
@@ -220,6 +232,7 @@ export class AudioRecorder {
    */
   async release() {
     this.audioLoop = false
+    this.closeRecordFile()
     if (this.audioCapturer !== undefined) {
       // 采集器状态不是STATE_RELEASED或STATE_NEW状态，才能release
       if ((this.audioCapturer as audio.AudioCapturer).state.valueOf() === audio.AudioState.STATE_RELEASED ||
@@ -234,5 +247,38 @@ export class AudioRecorder {
         console.error('Capturer release failed');
       }
     }
+  }
+
+  private openRecordFile(): void {
+    this.closeRecordFile()
+    this.writeOffset = 0
+    const filePath = this.context.cacheDir + '/' + this.recordFileName
+    // 每次录音都用 TRUNC 清空旧内容，避免复用默认路径时混入上一次录音。
+    this.tempFile = fs.openSync(filePath, fs.OpenMode.TRUNC | fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE)
+  }
+
+  private writeRecordBuffer(buffer: ArrayBuffer): void {
+    if (!this.tempFile) {
+      return
+    }
+
+    fs.writeSync(this.tempFile.fd, buffer, {
+      offset: this.writeOffset,
+      length: buffer.byteLength
+    })
+    this.writeOffset += buffer.byteLength
+  }
+
+  private closeRecordFile(): void {
+    if (!this.tempFile) {
+      return
+    }
+
+    try {
+      fs.closeSync(this.tempFile)
+    } catch (error) {
+      Logger.debug('close record file failed')
+    }
+    this.tempFile = undefined
   }
 }

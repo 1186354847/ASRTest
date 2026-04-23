@@ -39,8 +39,8 @@ struct Index3 {
         .hitTestBehavior(HitTestMode.Block)
         .onTouch((event: TouchEvent) => {
           this.toastManager.handleTouchEvent(event, {
-            onVoiceSend: (audioPath: string) => {
-              this.resultText = audioPath
+            onVoiceSend: (audioPath: string, duration: number) => {
+              this.resultText = audioPath + '，duration=' + duration
             },
             onTextSend: (text: string) => {
               this.resultText = text
