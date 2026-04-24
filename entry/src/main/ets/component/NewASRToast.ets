@@ -159,6 +159,7 @@ struct NewASRToast {
           .justifyContent(FlexAlign.End)
 
           TextArea({ text: this.editText, placeholder: '' })
+            .id('ASREditText')
             .width('100%')
             .constraintSize({ maxHeight: 100, minHeight: 20 })
             .backgroundColor('#FFFFFF')
@@ -166,12 +167,14 @@ struct NewASRToast {
             .fontSize(13)
             .fontColor('#22252E')
             .placeholderColor('#B5B8C1')
-            .defaultFocus(true)
             .borderRadius(12)
             .padding({ left: 4, right: 4, top: 4, bottom: 4 })
             .onChange((value: string) => {
               this.editText = value
               this.toastManager.updateEditText(value)
+            })
+            .onAppear(() => {
+              this.getUIContext().getFocusController().requestFocus("ASREditText");
             })
 
           Row() {
