@@ -11,6 +11,7 @@ export const NEW_ASR_AREA_STORAGE_KEY = 'newASRArea'
 export const NEW_ASR_LOCKED_STORAGE_KEY = 'newASRLocked'
 export const NEW_ASR_TEXT_STORAGE_KEY = 'newASRText'
 export const NEW_ASR_VOLUME_STORAGE_KEY = 'newASRVolume'
+export const NEW_ASR_COUNTDOWN_STORAGE_KEY = 'newASRCountdown'
 
 export class NewASRTouchPoint {
   x: number = 0
@@ -38,6 +39,7 @@ export class NewASRToastManager implements SpeechAsrCallback {
   private contentNode: ComponentContent<NewASRToastParam> | null = null
   private longPressTimer?: number = undefined
   private autoStopTimer?: number = undefined
+  private countdownTimer?: number = undefined
   private actionParam: NewASRToastParam | null = null
   private asrHelper: VolcAsrHelper | null = null
   private isPressing: boolean = false
@@ -216,6 +218,7 @@ export class NewASRToastManager implements SpeechAsrCallback {
 
   private resetState(): void {
     this.clearAutoStopTimer()
+    this.clearCountdownTimer()
     this.asrHelper = null
     this.actionParam = null
     this.isFinishing = false
@@ -281,11 +284,17 @@ export class NewASRToastManager implements SpeechAsrCallback {
     AppStorage.setOrCreate(NEW_ASR_VOLUME_STORAGE_KEY, volume)
   }
 
+  private syncCountdownToView(seconds: number): void {
+    AppStorage.setOrCreate(NEW_ASR_COUNTDOWN_STORAGE_KEY, seconds)
+  }
+
   private startAsr(): void {
     this.recognizedText = ''
     this.syncTextToView()
     this.syncVolumeToView(0)
+    this.syncCountdownToView(0)
     this.clearAutoStopTimer()
+    this.clearCountdownTimer()
 
     const atManager = abilityAccessCtrl.createAtManager()
     atManager.requestPermissionsFromUser(EntryAbility.ability.context, ['ohos.permission.MICROPHONE'])
@@ -314,6 +323,7 @@ export class NewASRToastManager implements SpeechAsrCallback {
     // 这个长按弹窗由手势/60s 定时器控制结束，避免火山 definite 中间结果提前停止录音。
     this.asrHelper.setAutoStopOnDefinite(false)
     this.asrHelper.startListening(this)
+    this.startCountdown()
 
     this.autoStopTimer = setTimeout(() => {
       void this.finishByArea(NewASRPressArea.VOICE)
@@ -322,6 +332,7 @@ export class NewASRToastManager implements SpeechAsrCallback {
 
   private stopAsr(): void {
     this.clearAutoStopTimer()
+    this.clearCountdownTimer()
     if (!this.asrHelper) {
       return
     }
@@ -330,6 +341,7 @@ export class NewASRToastManager implements SpeechAsrCallback {
 
   private cancelAsr(): void {
     this.clearAutoStopTimer()
+    this.clearCountdownTimer()
     this.syncVolumeToView(0)
     this.asrHelper?.cancel()
     this.asrHelper = null
@@ -340,6 +352,33 @@ export class NewASRToastManager implements SpeechAsrCallback {
       clearTimeout(this.autoStopTimer)
       this.autoStopTimer = undefined
     }
+  }
+
+  private startCountdown(): void {
+    this.clearCountdownTimer()
+    const endAt = Date.now() + maxRecordDurationMs
+    this.updateCountdown(endAt)
+    this.countdownTimer = setInterval(() => {
+      this.updateCountdown(endAt)
+    }, 1000)
+  }
+
+  private updateCountdown(endAt: number): void {
+    const remainMs = endAt - Date.now()
+    if (remainMs <= 0) {
+      this.syncCountdownToView(0)
+      this.clearCountdownTimer()
+      return
+    }
+    this.syncCountdownToView(Math.ceil(remainMs / 1000))
+  }
+
+  private clearCountdownTimer(): void {
+    if (this.countdownTimer !== undefined) {
+      clearInterval(this.countdownTimer)
+      this.countdownTimer = undefined
+    }
+    this.syncCountdownToView(0)
   }
 
   private getAudioSavePath(): string {

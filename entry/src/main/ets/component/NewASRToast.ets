@@ -1,5 +1,6 @@
 import {
   NEW_ASR_AREA_STORAGE_KEY,
+  NEW_ASR_COUNTDOWN_STORAGE_KEY,
   NEW_ASR_LOCKED_STORAGE_KEY,
   NEW_ASR_TEXT_STORAGE_KEY,
   NEW_ASR_VOLUME_STORAGE_KEY,
@@ -36,6 +37,7 @@ struct NewASRToast {
   @StorageLink(NEW_ASR_LOCKED_STORAGE_KEY) isLocked: boolean = false
   @StorageLink(NEW_ASR_TEXT_STORAGE_KEY) @Watch('onTextChange') recognizedText: string = ''
   @StorageLink(NEW_ASR_VOLUME_STORAGE_KEY) volumeLevel: number = 0
+  @StorageLink(NEW_ASR_COUNTDOWN_STORAGE_KEY) countdownSeconds: number = 0
   private toastManager: NewASRToastManager = NewASRToastManager.getInstance()
   private textScroller: Scroller = new Scroller()
   private needAtEnd: boolean = false
@@ -58,6 +60,13 @@ struct NewASRToast {
     Column() {
       Blank()
         .layoutWeight(1)
+
+      if (this.countdownSeconds > 0 && this.countdownSeconds <= 10) {
+        Text(`${this.countdownSeconds}s 后停止录音`)
+          .fontSize(16)
+          .fontColor('#FFFFFF')
+          .margin({ bottom: 12 })
+      }
 
       Scroll(this.textScroller) {
         Text(this.getTextContent())
