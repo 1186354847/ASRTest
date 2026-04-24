@@ -41,8 +41,26 @@ struct NewASRToast {
   private toastManager: NewASRToastManager = NewASRToastManager.getInstance()
   private textScroller: Scroller = new Scroller()
   private needAtEnd: boolean = false
+  @State stableDisplayText: string = ''
+  @State tailChar0: string = ''
+  @State tailChar1: string = ''
+  @State tailChar2: string = ''
+  @State tailOpacity0: number = 1
+  @State tailOpacity1: number = 1
+  @State tailOpacity2: number = 1
+  private previousTextLength: number = 0
+  private tailFadeTimer?: number = undefined
+
+  aboutToAppear(): void {
+    this.updateDisplayText(false)
+  }
+
+  aboutToDisappear(): void {
+    this.clearTailFadeTimer()
+  }
 
   onTextChange(): void {
+    this.updateDisplayText(true)
     // 只有用户仍停留在底部时才自动跟随，用户手动上翻后不抢滚动位置。
     if (this.needAtEnd && !this.textScroller.isAtEnd()) {
       return
@@ -54,6 +72,68 @@ struct NewASRToast {
 
   private getTextContent(): string {
     return this.recognizedText.length > 0 ? this.recognizedText : '请开始说话'
+  }
+
+  private updateDisplayText(shouldAnimate: boolean): void {
+    const text = this.getTextContent()
+    const stableText = text.length <= 3 ? '' : text.slice(0, text.length - 3)
+    const tailText = text.length <= 3 ? text : text.slice(text.length - 3)
+    const currentLength = this.recognizedText.length
+
+    this.stableDisplayText = stableText
+    this.tailChar0 = tailText[0] ?? ''
+    this.tailChar1 = tailText[1] ?? ''
+    this.tailChar2 = tailText[2] ?? ''
+
+    if (!shouldAnimate || currentLength <= 0 || currentLength <= this.previousTextLength) {
+      this.previousTextLength = currentLength
+      this.setTailOpacity(1, 1, 1)
+      return
+    }
+
+    this.previousTextLength = currentLength
+    this.playTailFadeAnimation()
+  }
+
+  private playTailFadeAnimation(): void {
+    this.clearTailFadeTimer()
+    const startOpacity0 = 0.7
+    const startOpacity1 = 0.4
+    const startOpacity2 = 0.15
+    const totalSteps = 10
+    let currentStep = 0
+    this.setTailOpacity(startOpacity0, startOpacity1, startOpacity2)
+
+    this.tailFadeTimer = setInterval(() => {
+      currentStep += 1
+      const progress = currentStep / totalSteps
+      this.setTailOpacity(
+        startOpacity0 + (1 - startOpacity0) * progress,
+        startOpacity1 + (1 - startOpacity1) * progress,
+        startOpacity2 + (1 - startOpacity2) * progress
+      )
+      if (currentStep >= totalSteps) {
+        this.clearTailFadeTimer()
+        this.setTailOpacity(1, 1, 1)
+      }
+    }, 100)
+  }
+
+  private setTailOpacity(opacity0: number, opacity1: number, opacity2: number): void {
+    this.tailOpacity0 = opacity0
+    this.tailOpacity1 = opacity1
+    this.tailOpacity2 = opacity2
+  }
+
+  private clearTailFadeTimer(): void {
+    if (this.tailFadeTimer !== undefined) {
+      clearInterval(this.tailFadeTimer)
+      this.tailFadeTimer = undefined
+    }
+  }
+
+  private getTailColor(opacity: number): string {
+    return `rgba(59, 59, 69, ${opacity})`
   }
 
   build() {
@@ -69,7 +149,23 @@ struct NewASRToast {
       }
 
       Scroll(this.textScroller) {
-        Text(this.getTextContent())
+        Text() {
+          Span(this.stableDisplayText)
+            .fontSize(14)
+            .fontColor('#3B3B45')
+
+          Span(this.tailChar0)
+            .fontSize(14)
+            .fontColor(this.getTailColor(this.tailOpacity0))
+
+          Span(this.tailChar1)
+            .fontSize(14)
+            .fontColor(this.getTailColor(this.tailOpacity1))
+
+          Span(this.tailChar2)
+            .fontSize(14)
+            .fontColor(this.getTailColor(this.tailOpacity2))
+        }
           .width('100%')
           .fontSize(14)
           .lineHeight(22)
