@@ -1,4 +1,4 @@
-import { ComponentContent } from '@kit.ArkUI'
+import { ComponentContent, LengthUnit } from '@kit.ArkUI'
 import EntryAbility from '../entryability/EntryAbility'
 import { NewASRToastBuilder, NewASRToastParam } from './NewASRToast'
 import { fileIo as fs } from '@kit.CoreFileKit'
@@ -12,6 +12,8 @@ export const NEW_ASR_LOCKED_STORAGE_KEY = 'newASRLocked'
 export const NEW_ASR_TEXT_STORAGE_KEY = 'newASRText'
 export const NEW_ASR_VOLUME_STORAGE_KEY = 'newASRVolume'
 export const NEW_ASR_COUNTDOWN_STORAGE_KEY = 'newASRCountdown'
+export const NEW_ASR_EDITING_STORAGE_KEY = 'newASREditing'
+export const NEW_ASR_EDIT_TEXT_STORAGE_KEY = 'newASREditText'
 
 export class NewASRTouchPoint {
   x: number = 0
@@ -140,6 +142,7 @@ export class NewASRToastManager implements SpeechAsrCallback {
       autoCancel: false,
       alignment: DialogAlignment.Bottom,
       transition: TransitionEffect.IDENTITY,
+      keyboardAvoidDistance: { value: 0, unit: LengthUnit.VP },
       onWillDismiss: (_dismissDialogAction: DismissDialogAction) => {
         this.handleLockedAction(NewASRPressArea.CANCEL)
       }
@@ -194,8 +197,7 @@ export class NewASRToastManager implements SpeechAsrCallback {
 
     if (area === NewASRPressArea.TEXT) {
       this.stopAsr()
-      this.actionParam?.onTextSend?.(this.recognizedText)
-      this.resetState()
+      this.enterEditMode()
       return
     }
 
@@ -219,6 +221,8 @@ export class NewASRToastManager implements SpeechAsrCallback {
   private resetState(): void {
     this.clearAutoStopTimer()
     this.clearCountdownTimer()
+    this.syncEditingToView(false)
+    this.syncEditTextToView('')
     this.asrHelper = null
     this.actionParam = null
     this.isFinishing = false
@@ -288,11 +292,21 @@ export class NewASRToastManager implements SpeechAsrCallback {
     AppStorage.setOrCreate(NEW_ASR_COUNTDOWN_STORAGE_KEY, seconds)
   }
 
+  private syncEditingToView(editing: boolean): void {
+    AppStorage.setOrCreate(NEW_ASR_EDITING_STORAGE_KEY, editing)
+  }
+
+  private syncEditTextToView(text: string): void {
+    AppStorage.setOrCreate(NEW_ASR_EDIT_TEXT_STORAGE_KEY, text)
+  }
+
   private startAsr(): void {
     this.recognizedText = ''
     this.syncTextToView()
     this.syncVolumeToView(0)
     this.syncCountdownToView(0)
+    this.syncEditingToView(false)
+    this.syncEditTextToView('')
     this.clearAutoStopTimer()
     this.clearCountdownTimer()
 
@@ -337,6 +351,28 @@ export class NewASRToastManager implements SpeechAsrCallback {
       return
     }
     this.asrHelper.stopListening()
+  }
+
+  private enterEditMode(): void {
+    this.isLocked = false
+    this.syncLockedToView()
+    this.syncEditingToView(true)
+    this.syncEditTextToView(this.recognizedText)
+    this.isFinishing = false
+  }
+
+  public updateEditText(text: string): void {
+    this.syncEditTextToView(text)
+  }
+
+  public sendEditedText(text: string): void {
+    this.actionParam?.onTextSend?.(text)
+    this.resetState()
+  }
+
+  public cancelEditing(): void {
+    this.actionParam?.onCancel?.()
+    this.resetState()
   }
 
   private cancelAsr(): void {

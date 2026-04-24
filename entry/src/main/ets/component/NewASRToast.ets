@@ -1,6 +1,8 @@
 import {
   NEW_ASR_AREA_STORAGE_KEY,
   NEW_ASR_COUNTDOWN_STORAGE_KEY,
+  NEW_ASR_EDITING_STORAGE_KEY,
+  NEW_ASR_EDIT_TEXT_STORAGE_KEY,
   NEW_ASR_LOCKED_STORAGE_KEY,
   NEW_ASR_TEXT_STORAGE_KEY,
   NEW_ASR_VOLUME_STORAGE_KEY,
@@ -38,6 +40,8 @@ struct NewASRToast {
   @StorageLink(NEW_ASR_TEXT_STORAGE_KEY) @Watch('onTextChange') recognizedText: string = ''
   @StorageLink(NEW_ASR_VOLUME_STORAGE_KEY) volumeLevel: number = 0
   @StorageLink(NEW_ASR_COUNTDOWN_STORAGE_KEY) countdownSeconds: number = 0
+  @StorageLink(NEW_ASR_EDITING_STORAGE_KEY) isEditing: boolean = false
+  @StorageLink(NEW_ASR_EDIT_TEXT_STORAGE_KEY) editText: string = ''
   private toastManager: NewASRToastManager = NewASRToastManager.getInstance()
   private textScroller: Scroller = new Scroller()
   private needAtEnd: boolean = false
@@ -138,6 +142,78 @@ struct NewASRToast {
 
   build() {
     Column() {
+      if (this.isEditing) {
+        Blank()
+          .layoutWeight(1)
+        Column() {
+
+          Row() {
+            Text('×')
+              .fontSize(24)
+              .fontColor('#B5B8C1')
+              .onClick(() => {
+                this.toastManager.cancelEditing()
+              })
+          }
+          .width('100%')
+          .justifyContent(FlexAlign.End)
+
+          TextArea({ text: this.editText, placeholder: '' })
+            .width('100%')
+            .constraintSize({ maxHeight: 100, minHeight: 20 })
+            .backgroundColor('#FFFFFF')
+            .lineHeight(18)
+            .fontSize(13)
+            .fontColor('#22252E')
+            .placeholderColor('#B5B8C1')
+            .defaultFocus(true)
+            .borderRadius(12)
+            .padding({ left: 4, right: 4, top: 4, bottom: 4 })
+            .onChange((value: string) => {
+              this.editText = value
+              this.toastManager.updateEditText(value)
+            })
+
+          Row() {
+            Row() {
+              Text('取消')
+                .fontSize(14)
+                .fontColor('#9EA3AE')
+            }.width('50%')
+            .height(30)
+            .justifyContent(FlexAlign.Center)
+            .alignItems(VerticalAlign.Center)
+            .onClick(() => {
+              this.toastManager.cancelEditing()
+            })
+
+            Row() {
+              Row() {
+                Text('发送')
+                  .fontSize(14)
+                  .blendMode(BlendMode.DST_IN, BlendApplyType.OFFSCREEN)
+                  .fontWeight(500)
+              }.linearGradient({
+                angle: 90,
+                colors: [['#602FC8', 0], ['#EE2233', 1]]
+              })
+              .blendMode(BlendMode.SRC_OVER, BlendApplyType.OFFSCREEN)
+            }.width('50%')
+            .height(30)
+            .justifyContent(FlexAlign.Center)
+            .alignItems(VerticalAlign.Center)
+            .onClick(() => {
+              this.toastManager.sendEditedText(this.editText)
+            })
+          }
+          .width('100%')
+          .margin({ top: 18 })
+        }
+        .width('100%')
+        .padding({ left: 16, right: 16, top: 14, bottom: 8 })
+        .backgroundColor('#FFFFFF')
+        .borderRadius({ topLeft: 12, topRight: 12 })
+      } else {
       Blank()
         .layoutWeight(1)
 
@@ -393,6 +469,7 @@ struct NewASRToast {
       .width('100%')
       .height(150)
       .clip(true)
+      }
     }
     .width('100%')
     .height('100%')
