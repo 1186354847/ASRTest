@@ -6,6 +6,7 @@ export struct SoundComponent {
   @Prop lineColor: ResourceStr = '#ee2233'
   lineSpace: number = 10 // 间距
   lineWidth: number = 5 // 宽
+  minHeight?: number // 最小高度，不传时默认与 lineWidth 一致
   maxHeight: number = 100
   maxWidth: number = 200
   @State lineHeightList: number[] = []
@@ -32,7 +33,7 @@ export struct SoundComponent {
   }
 
   volumeChange() {
-    const minHeight = this.lineWidth
+    const minHeight = this.getMinHeight()
     const count = this.getLineCount()
     const safeVolume = this.volumeNumber ?? 0
 
@@ -73,12 +74,16 @@ export struct SoundComponent {
 
   private createMinHeightList(): number[] {
     const list: number[] = []
-    const minHeight = this.lineWidth
+    const minHeight = this.getMinHeight()
     const count = this.getLineCount()
     for (let i = 0; i < count; i++) {
       list.push(minHeight)
     }
     return list
+  }
+
+  private getMinHeight(): number {
+    return this.minHeight ?? this.lineWidth
   }
 
   build() {

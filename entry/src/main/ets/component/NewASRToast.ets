@@ -6,6 +6,7 @@ import {
   NewASRPressArea,
   NewASRToastManager
 } from './NewASRToastManager'
+import { SoundComponent } from './SoundComponent'
 
 export interface NewASRToastParam {
   path?: string
@@ -51,12 +52,6 @@ struct NewASRToast {
 
   private getTextContent(): string {
     return this.recognizedText.length > 0 ? this.recognizedText : '请开始说话'
-  }
-
-  private getWaveHeight(item: number): number {
-    const baseHeight = item % 4 === 0 ? 18 : item % 3 === 0 ? 13 : 9
-    const volumeRatio = Math.max(0.2, Math.min(this.volumeLevel, 100) / 100)
-    return Math.max(5, Math.floor(baseHeight * volumeRatio))
   }
 
   build() {
@@ -262,18 +257,21 @@ struct NewASRToast {
             .fontSize(13)
             .fontColor(this.currentArea === NewASRPressArea.VOICE ? '#5D4A9B' : '#6F6684')
             .fontWeight(FontWeight.Medium)
-            .margin({ top: 13, bottom: 15 })
+            .margin({ top: 20, bottom: 20 })
 
           Row() {
             Row({ space: 5 }) {
-              ForEach([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
-                (item: number) => {
-                  Column()
-                    .width(2.5)
-                    .height(this.getWaveHeight(item))
-                    .borderRadius(2)
-                    .backgroundColor('#fff')
-                })
+              SoundComponent({
+                volumeNumber: this.volumeLevel,
+                maxVolume: 100,
+                maxHeight: 30,
+                maxWidth: 250,
+                lineWidth: 3,
+                lineSpace: 5,
+                noise: 20,
+                minHeight: 10,
+                lineColor: '#C04BF5'
+              })
             }.blendMode(BlendMode.DST_IN, BlendApplyType.OFFSCREEN)
           }
           .linearGradient({
