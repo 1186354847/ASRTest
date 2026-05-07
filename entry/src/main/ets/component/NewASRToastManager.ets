@@ -35,6 +35,7 @@ export enum NewASRPressArea {
 const samplingRate = 16000
 const channels = 1
 const maxRecordDurationMs = 60000
+const minRecordDurationMs = 500
 
 export class NewASRToastManager implements SpeechAsrCallback {
   private static instance: NewASRToastManager
@@ -48,6 +49,7 @@ export class NewASRToastManager implements SpeechAsrCallback {
   private isLocked: boolean = false
   private isFinishing: boolean = false
   private recognizedText: string = ''
+  private recordStartAt: number = 0
   private currentPoint: NewASRTouchPoint | null = null
   private currentArea: NewASRPressArea = NewASRPressArea.VOICE
   private readonly pageWidth: number
@@ -195,6 +197,13 @@ export class NewASRToastManager implements SpeechAsrCallback {
       return
     }
 
+    if (this.isRecordTooShort()) {
+      this.cancelAsr()
+      this.actionParam?.onCancel?.('录音时间太短')
+      this.resetState()
+      return
+    }
+
     if (area === NewASRPressArea.TEXT) {
       this.stopAsr()
       this.enterEditMode()
@@ -307,6 +316,7 @@ export class NewASRToastManager implements SpeechAsrCallback {
     this.syncCountdownToView(0)
     this.syncEditingToView(false)
     this.syncEditTextToView('')
+    this.recordStartAt = 0
     this.clearAutoStopTimer()
     this.clearCountdownTimer()
 
@@ -337,6 +347,7 @@ export class NewASRToastManager implements SpeechAsrCallback {
     // 这个长按弹窗由手势/60s 定时器控制结束，避免火山 definite 中间结果提前停止录音。
     this.asrHelper.setAutoStopOnDefinite(false)
     this.asrHelper.startListening(this)
+    this.recordStartAt = Date.now()
     this.startCountdown()
 
     this.autoStopTimer = setTimeout(() => {
@@ -415,6 +426,13 @@ export class NewASRToastManager implements SpeechAsrCallback {
       this.countdownTimer = undefined
     }
     this.syncCountdownToView(0)
+  }
+
+  private isRecordTooShort(): boolean {
+    if (this.recordStartAt <= 0) {
+      return true
+    }
+    return Date.now() - this.recordStartAt < minRecordDurationMs
   }
 
   private getAudioSavePath(): string {

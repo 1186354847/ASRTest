@@ -15,7 +15,7 @@ export interface NewASRToastParam {
   path?: string
   onVoiceSend?: (audioPath: string, duration: number) => void
   onTextSend?: (text: string) => void
-  onCancel?: () => void
+  onCancel?: (reason?: string) => void
 }
 
 @Builder
@@ -287,7 +287,7 @@ struct NewASRToast {
           .linearGradient({
             angle: 171,
             colors: this.currentArea === NewASRPressArea.CANCEL ?
-              [['rgba(255, 255, 255, 0.95)', 0.14], ['rgba(252, 244, 255, 1)', 0.58]] :
+              [['rgba(254, 252, 255, 0.67)', 0.14], ['rgba(255, 255, 255, 0.95)', 0.58]] :
               [['rgba(249, 237, 253, 0.67)', 0.14], ['rgba(252, 244, 255, 0.95)', 0.58]]
           })
           .borderRadius(24)
@@ -338,7 +338,7 @@ struct NewASRToast {
           .linearGradient({
             angle: 171,
             colors: this.currentArea === NewASRPressArea.LOCK ?
-              [['rgba(255, 255, 255, 0.95)', 0.14], ['rgba(252, 244, 255, 1)', 0.58]] :
+              [['rgba(254, 252, 255, 0.67)', 0.14], ['rgba(255, 255, 255, 0.95)', 0.58]] :
               [['rgba(249, 237, 253, 0.67)', 0.14], ['rgba(252, 244, 255, 0.95)', 0.58]]
           })
           .borderRadius(24)
@@ -388,7 +388,7 @@ struct NewASRToast {
           .linearGradient({
             angle: 171,
             colors: this.currentArea === NewASRPressArea.TEXT ?
-              [['rgba(255, 255, 255, 0.95)', 0.14], ['rgba(252, 244, 255, 1)', 0.58]] :
+              [['rgba(254, 252, 255, 0.67)', 0.14], ['rgba(255, 255, 255, 0.95)', 0.58]] :
               [['rgba(249, 237, 253, 0.67)', 0.14], ['rgba(252, 244, 255, 0.95)', 0.58]]
           })
           .borderRadius(24)
